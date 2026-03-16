@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%;
+    overflow-x: hidden; 
+    background: url('https://i.postimg.cc/X7p3zcqS/Gemini-Generated-Image-iee374iee374iee3.png') no-repeat center center fixed;
+    background-size: cover;
+    font-family: sans-serif;
+  }
+
+  body { 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 50px; 
+  }
+
+  .overlay {
+    background-color: rgba(255, 255, 255, 0.95); 
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px auto;
+    width: 90%; 
+    max-width: 400px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  h1 { 
+    font-family: 'Georgia', serif; 
+    font-size: 1.8rem;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  input, textarea { 
+    width: 100%;
+    font-size: 16px; 
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  button { 
+    background: #000; 
+    color: white; 
+    padding: 15px;
+    border-radius: 8px;
+    width: 100%;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #666;
+    cursor: not-allowed;
+  }
+
+  .ricordo-card {
+    background: white;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    width: 100%;
+    border: 1px solid #eee;
+  }
+
+  .ricordo-card img {
+    max-width: 100%;
+    display: block;
+    margin-bottom: 10px;
+    border-radius: 3px;
+  }
+
+  .messaggio-testo {
+    font-size: 1.1rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    color: #333;
+  }
+
+  .firma {
+    text-align: right;
+    font-weight: bold;
+    color: #555;
+  }
+
+  #loading { text-align: center; padding: 20px; font-weight: bold; }
+  #status { text-align: center; margin-top: 10px; font-weight: bold; color: #d63384; }
+</style>
+  </head>
+  <body>
+
+    <div class="overlay">
+      <h1>💋 La ragazza copertina si è laureata! 🎓</h1>
+      <p style="text-align:center; margin-bottom: 15px;">Lascia una foto, un audio o un pensiero!</p>
+
+      <div class="form-container">
+        <form id="ricordoForm" onsubmit="inviaDati(event)">
+          <input type="text" name="nome" placeholder="Il tuo nome" required>
+          <textarea name="messaggio" placeholder="Dicci qualcosa (facoltativo)..." rows="3"></textarea>
+          <label style="display:block; text-align:left; margin-bottom:5px; font-size: 0.8em; color: #666;">Aggiungi foto o audio (facoltativo):</label>
+          <input type="file" name="file" accept="image/*, audio/*">
+          <button type="submit" id="btnInvia">Appendi in Bacheca 📌</button>
+        </form>
+        <p id="status"></p>
+      </div>
+
+      <hr style="border: 0; height: 1px; background: #ddd; margin: 30px 0;">
+
+      <div id="loading">Caricamento ricordi... ⏳</div>
+      <div id="bacheca"></div>
+    </div>
+
+    <script>
+      //While the page loadsn, we ask App Script to download the memories
+      window.onload = function() { 
+        uploadBoard(); 
+      };
+
+      function uploadBoard() {
+        const bacheca = document.getElementById('bacheca');
+        if (bacheca.innerHTML === '') {
+          document.getElementById('loading').style.display = 'block';
+        }
+
+        
+        google.script.run
+          .withSuccessHandler(showMemory)
+          .withFailureHandler(showError)
+          .obtainMemory();
+      }
+
+      // Function that manges data from Google sheet
+      function showMemory(dati) {
+        document.getElementById('loading').style.display = 'none';
+        const board = document.getElementById('board');
+        board.innerHTML = ''; // Cleans the board before re-uploading it
+        
+        if (!dati || dati.length === 0) {
+           board.innerHTML = '<p style="text-align:center; color:#555;">Nessun ricordo ancora. Sii tu il primo! 💖</p>';
+           return;
+        }
+
+        // Show messages from the more recent ones to the older ones
+        for (let i = dati.length - 1; i >= 0; i--) {
+          let riga = dati[i];
+          let nome = riga[0];
+          let messaggio = riga[1];
+          let fileUrl = riga[2];
+          let fileType = riga[3];
+          let dataInvio = riga[4];
+
+          let card = document.createElement('div');
+          card.className = 'ricordo-card';
+          
+          let contenuto = '';
+          
+          // Se c'è un file allegato, controlliamo se è immagine o audio
+          if (fileUrl) {
+             if (fileType && fileType.startsWith('image/')) {
+                contenuto += `<img src="${fileUrl}" alt="Foto caricata da ${nome}">`;
+             } else if (fileType && fileType.startsWith('audio/')) {
+                contenuto += `<a href="${fileUrl}" target="_blank" style="display:block; background:#d63384; color:white; padding:12px; text-align:center; border-radius:8px; text-decoration:none; margin-bottom:10px; font-weight:bold;">🎵 Ascolta Messaggio Vocale</a>`;
+             }
+          }
+
+          // Mostra il testo solo se non è vuoto
+          if (messaggio && messaggio.trim() !== "") {
+            contenuto += `<div class="messaggio-testo">"${messaggio}"</div>`;
+          }
+          contenuto += `<div class="firma">- ${nome} <br><small style="color:#999; font-size:0.8em; font-weight:normal;">${dataInvio}</small></div>`;
+          
+          card.innerHTML = contenuto;
+          board.appendChild(card);
+        }
+      }
+
+      function showErrror(err) {
+         document.getElementById('loading').style.display = 'none';
+         document.getElementById('bacheca').innerHTML = '<p style="color:red; text-align:center;">Errore nel caricamento della bacheca.</p>';
+         console.error(err);
+      }
+
+function sendData(event) {
+        event.preventDefault(); 
+        
+        const form = document.getElementById('ricordoForm');
+        const fileInput = form.querySelector('input[type="file"]');
+        const testoMessaggio = form.messaggio.value.trim();
+
+        // NUOVO CONTROLLO: Se non c'è né messaggio né file, blocca l'invio
+        if (testoMessaggio === "" && fileInput.files.length === 0) {
+            alert("Inserisci almeno un pensiero o allega una foto/audio! 💖");
+            return; // Ferma tutto qui
+        }
+
+        const btn = document.getElementById('btnInvia');
+        const status = document.getElementById('status');
+        
+        btn.disabled = true;
+        btn.innerText = "Caricamento in corso... ⏳";
+        status.innerText = "";
+        status.style.color = "#d63384";
+
+        let data = {
+          nome: form.nome.value,
+          messaggio: form.messaggio.value,
+          fileData: null
+        };
+
+        
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1];
+            data.fileData = {
+              base64: base64Data,
+              mimeType: file.type,
+              fileName: file.name
+            };
+            send(data);
+          };
+          reader.readAsDataURL(file); 
+        } else {
+          send(data);
+        }
+      }
+
+      function send(data) {
+         google.script.run
+          .withSuccessHandler(function(risposta) {
+             const btn = document.getElementById('btnInvia');
+             const status = document.getElementById('status');
+             const form = document.getElementById('ricordoForm');
+             
+             if (risposta === "OK") {
+               form.reset(); // Svuota i campi
+               status.style.color = "green";
+               status.innerText = "Ricordo aggiunto con successo! 🎉";
+               
+               // Ricarica la bacheca per mostrare il nuovo messaggio
+               document.getElementById('bacheca').innerHTML = ''; 
+               uploadBoard();
+               
+               // Nascondi il messaggio di successo dopo 4 secondi
+               setTimeout(() => { status.innerText = ""; }, 4000);
+             } else {
+               status.style.color = "red";
+               status.innerText = "Ops! C'è stato un errore nel server.";
+               console.error(risposta);
+             }
+             
+             // Sblocca il bottone
+             btn.disabled = false;
+             btn.innerText = "Appendi in Bacheca 📌";
+          })
+          .withFailureHandler(function(err) {
+             document.getElementById('status').style.color = "red";
+             document.getElementById('status').innerText = "Errore di connessione. Riprova.";
+             document.getElementById('btnInvia').disabled = false;
+             document.getElementById('btnInvia').innerText = "Appendi in Bacheca 📌";
+             console.error(err);
+          })
+          .uploadMemory(data); // Chiama la funzione GS "caricaRicordo"
+      }
+    </script>
+  </body>
+</html>
