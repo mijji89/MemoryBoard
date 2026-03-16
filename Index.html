@@ -104,7 +104,7 @@
       <p style="text-align:center; margin-bottom: 15px;">Lascia una foto, un audio o un pensiero!</p>
 
       <div class="form-container">
-        <form id="ricordoForm" onsubmit="inviaDati(event)">
+        <form id="ricordoForm" onsubmit="sendData(event)">
           <input type="text" name="nome" placeholder="Il tuo nome" required>
           <textarea name="messaggio" placeholder="Dicci qualcosa (facoltativo)..." rows="3"></textarea>
           <label style="display:block; text-align:left; margin-bottom:5px; font-size: 0.8em; color: #666;">Aggiungi foto o audio (facoltativo):</label>
@@ -142,11 +142,11 @@
       // Function that manges data from Google sheet
       function showMemory(dati) {
         document.getElementById('loading').style.display = 'none';
-        const board = document.getElementById('board');
-        board.innerHTML = ''; // Cleans the board before re-uploading it
+        const board = document.getElementById('bacheca');
+        bacheca.innerHTML = ''; // Cleans the board before re-uploading it
         
         if (!dati || dati.length === 0) {
-           board.innerHTML = '<p style="text-align:center; color:#555;">Nessun ricordo ancora. Sii tu il primo! 💖</p>';
+           bacheca.innerHTML = '<p style="text-align:center; color:#555;">Nessun ricordo ancora. Sii tu il primo! 💖</p>';
            return;
         }
 
@@ -184,7 +184,7 @@
         }
       }
 
-      function showErrror(err) {
+      function showError(err) {
          document.getElementById('loading').style.display = 'none';
          document.getElementById('bacheca').innerHTML = '<p style="color:red; text-align:center;">Errore nel caricamento della bacheca.</p>';
          console.error(err);
