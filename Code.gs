@@ -1,6 +1,6 @@
 // FOLDER AND SHEET ID (change with your own IDs)
-const FOLDER_ID = '1s2Zb4ZP8In2S2Mld7qb2SBn6JSsCgR_d';
-const SHEET_ID = '1IHxHQ2L3PM87MNpoG_IvNm2rPvQub-z9_jag3P-3qEQ';
+const FOLDER_ID = '';
+const SHEET_ID = '';
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
